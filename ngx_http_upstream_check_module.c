@@ -653,7 +653,7 @@ static ngx_check_conf_t  ngx_check_types[] = {
       NULL,
       NULL,
       0,
-      1 },
+      0 },
 
     { NGX_HTTP_CHECK_HTTP,
       ngx_string("http"),
@@ -1048,7 +1048,6 @@ ngx_http_upstream_check_begin_handler(ngx_event_t *event)
 
     /* This process is processing this peer now. */
     if ((peer->shm->owner == ngx_pid  ||
-        (peer->pc.connection != NULL) ||
         peer->check_timeout_ev.timer_set)) {
         return;
     }
@@ -3564,7 +3563,7 @@ ngx_http_upstream_check_init_main_conf(ngx_conf_t *cf, void *conf)
     ngx_http_upstream_main_conf_t  *umcf;
     ngx_uint_t                      j;
     ngx_http_upstream_server_t  *upset;
-    
+
     umcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_upstream_module);
 
     b = ngx_http_upstream_check_create_fastcgi_request(cf->pool,
