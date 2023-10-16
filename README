@@ -1,8 +1,8 @@
-Name
+# Name
     nginx_http_upstream_check_module - support upstream health check with
     Nginx
 
-Synopsis
+# Synopsis
     http {
 
         upstream cluster {
@@ -38,14 +38,14 @@ Synopsis
 
     }
 
-Description
+## Description
     Add the support of health check with the upstream servers.
 
-Directives
-  check
+## Usage Directives
+check
     syntax: *check interval=milliseconds [fall=count] [rise=count]
     [timeout=milliseconds] [default_down=true|false]
-    [type=tcp|http|ssl_hello|mysql|ajp|fastcgi]*
+    [type=tcp|http|https|ssl_hello|mysql|ajp|fastcgi]*
 
     default: *none, if parameters omitted, default parameters are
     interval=30000 fall=5 rise=2 timeout=1000 default_down=true type=tcp*
@@ -83,13 +83,17 @@ Directives
         3.  *http* sends a http request packet, receives and parses the http
             response to diagnose if the upstream server is alive.
 
-        4.  *mysql* connects to the mysql server, receives the greeting
+        4.  *https* establishes a https connection and sends a http request
+            packet, receives and parses the http response to diagnose if the
+            upstream server is alive.
+
+        5.  *mysql* connects to the mysql server, receives the greeting
             response to diagnose if the upstream server is alive.
 
-        5.  *ajp* sends a AJP Cping packet, receives and parses the AJP
+        6.  *ajp* sends a AJP Cping packet, receives and parses the AJP
             Cpong response to diagnose if the upstream server is alive.
 
-        6.  *fastcgi* send a fastcgi request, receives and parses the
+        7.  *fastcgi* send a fastcgi request, receives and parses the
             fastcgi response to diagnose if the upstream server is alive.
 
   check_http_send
@@ -101,6 +105,16 @@ Directives
 
     description: If you set the check type is http, then the check function
     will sends this http packet to check the upstream server.
+
+  check_http_body
+    syntax: *check_http_body "text match"*
+
+    default: *"Status: {UP}"*
+
+    context: *upstream*
+
+    description: If you set the check type is http, then the check the body of
+    the returned page and search for this string.
 
   check_http_expect_alive
     syntax: *check_http_expect_alive [ http_2xx | http_3xx | http_4xx |
@@ -151,7 +165,7 @@ Directives
     enlarge it with this directive.
 
   check_status
-    syntax: *check_status [html|csv|json]*
+    syntax: *check_status [html|csv|json|prometheus]*
 
     default: *none*
 
@@ -161,7 +175,7 @@ Directives
     directive should be set in the http block.
 
     You can specify the default display format. The formats can be `html`,
-    `csv` or `json`. The default type is `html`. It also supports to specify
+    `csv`, `json` or `prometheus`. The default type is `html`. It also supports to specify
     the format by the request argument. Suppose your `check_status` location
     is '/status', the argument of `format` can change the display page's
     format. You can do like this:
@@ -169,6 +183,7 @@ Directives
         /status?format=html
         /status?format=csv
         /status?format=json
+        /status?format=prometheus
 
     At present, you can fetch the list of servers with the same status by
     the argument of `status`. For example:
@@ -214,25 +229,40 @@ Directives
           ]
          }}
 
-Installation
+## Prometheus
+The Prometheus status page was written by @[triluch](https://github.com/triluch)
+
+Here is a sample of Prometheus status page:
+
+        # TYPE nginx_http_upstream_check_total gauge
+        nginx_http_upstream_check_total 1
+        # TYPE nginx_http_upstream_check_total counter
+        nginx_http_upstream_check_generation 1
+        # TYPE nginx_http_upstream_check_peer_status gauge
+        # TYPE nginx_http_upstream_check_peer_probes counter
+        nginx_http_upstream_check_peer_status{index="0",upstream="backend",name="106.187.48.116:80",type="http",port="80"} 1
+        nginx_http_upstream_check_peer_probes{index="0",upstream="backend",name="106.187.48.116:80",type="http",port="80",count="rise"} 58
+        nginx_http_upstream_check_peer_probes{index="0",upstream="backend",name="106.187.48.116:80",type="http",port="80",count="fall"} 0
+
+## Installation
     Download the latest version of the release tarball of this module from
-    github (<http://github.com/yaoweibin/nginx_upstream_check_module>)
+    github (<https://github.com/dochost/nginx_upstream_check_module>)
 
     Grab the nginx source code from nginx.org (<http://nginx.org/>), for
-    example, the version 1.0.14 (see nginx compatibility), and then build
+    example, the version 1.17.9 (see nginx compatibility), and then build
     the source with this module:
 
-        $ wget 'http://nginx.org/download/nginx-1.0.14.tar.gz'
-        $ tar -xzvf nginx-1.0.14.tar.gz
-        $ cd nginx-1.0.14/
-        $ patch -p1 < /path/to/nginx_http_upstream_check_module/check.patch
+        $ wget 'http://nginx.org/download/nginx-1.17.9.tar.gz'
+        $ tar -xzvf nginx-1.17.9.tar.gz
+        $ cd nginx-1.17.9/
+        $ patch -p1 < /path/to/nginx_http_upstream_check_module/check_1.12.1+.patch
 
         $ ./configure --add-module=/path/to/nginx_http_upstream_check_module
 
         $ make
         $ make install
 
-Note
+## Notes
     If you use nginx-1.2.1 or nginx-1.3.0, the nginx upstream round robin
     module changed greatly. You should use the patch named
     'check_1.2.1.patch'.
@@ -250,7 +280,7 @@ Note
     'check_1.7.2+.patch'.
 
     The patch just adds the support for the official Round-Robin, Ip_hash
-    and least_conn upstream module. But it's easy to expand my module to
+    and least_conn upstream module. But it's easy to expand the module to
     other upstream modules. See the patch for detail.
 
     If you want to add the support for upstream fair module, you can do it
@@ -282,26 +312,29 @@ Compatibility
 
     *   The module version 0.1.8 should be compatibility with Nginx-1.0.14+
 
-Notes
-TODO
-Known Issues
-Changelogs
+
+## TODO
+## Known Issues
+## Changelogs
+  v0.5 - Changes by @[triluch](https://github.com/triluch)
+  * Mereged @triluch additions for Prometheus
+    v0.4 - Changes by @[dochost](https://github.com/dochost)
+*  Added support for HTTP body response
   v0.3
-    *   support keepalive check requests
+*   support keepalive check requests
 
-    *   fastcgi check requests
+*   fastcgi check requests
 
-    *   json/csv check status page support
-
+*   json/csv check status page support
   v0.1
-    *   first release
+*   first release
 
-Authors
+## Original Authors
     Weibin Yao(姚伟斌) *yaoweibin at gmail dot com*
 
     Matthieu Tourne
 
-Copyright & License
+## Copyright & License
     This README template copy from agentzh (<http://github.com/agentzh>).
 
     The health check part is borrowed the design of Jack Lindamood's
@@ -344,4 +377,3 @@ Copyright & License
     LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-

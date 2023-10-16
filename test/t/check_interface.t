@@ -90,7 +90,7 @@ GET /status
 Content-Type: text/html
 --- response_body_like: ^.*Check upstream server number: 6.*$
 
-=== TEST 3: the http_check interface, csv 
+=== TEST 3: the http_check interface, csv
 --- http_config
 upstream backend {
     server 127.0.0.1:1971;
@@ -130,7 +130,7 @@ GET /status
 Content-Type: text/plain
 --- response_body_like: ^.*$
 
-=== TEST 4: the http_check interface, json 
+=== TEST 4: the http_check interface, json
 --- http_config
 upstream backend {
     server 127.0.0.1:1971;
@@ -247,7 +247,7 @@ GET /status?format=json
 Content-Type: application/json
 --- response_body_like: ^.*"total": 6,.*$
 
-=== TEST 7: the http_check interface, default json, request html 
+=== TEST 7: the http_check interface, default json, request html
 --- http_config
 upstream backend {
     server 127.0.0.1:1971;
@@ -520,3 +520,67 @@ GET /status
 --- response_headers
 Content-Type: text/html
 --- response_body_like: ^.*Check upstream server number: 6.*$
+=== TEST 14: the http_check interface, prometheus
+--- http_config
+upstream backend {
+    server 127.0.0.1:1971;
+    server 127.0.0.1:1972;
+    server 127.0.0.1:1973;
+    server 127.0.0.1:1970;
+    server 127.0.0.1:1974;
+    server 127.0.0.1:1975;
+    check interval=3000 rise=1 fall=1 timeout=1000 type=http;
+    check_http_send "GET / HTTP/1.0\r\nConnection: keep-alive\r\n\r\n";
+    check_http_expect_alive http_2xx http_3xx;
+}
+server {
+    listen 1970;
+    location / {
+        root   html;
+        index  index.html index.htm;
+    }
+}
+--- config
+    location / {
+        proxy_pass http://backend;
+    }
+    location /status {
+        check_status prometheus;
+    }
+--- request
+GET /status
+--- response_headers
+Content-Type: text/plain
+--- response_body_like: ^.*nginx_http_upstream_check_total 6.*$
+=== TEST 15: the http_check interface, default html, request prometheus
+--- http_config
+upstream backend {
+    server 127.0.0.1:1971;
+    server 127.0.0.1:1972;
+    server 127.0.0.1:1973;
+    server 127.0.0.1:1970;
+    server 127.0.0.1:1974;
+    server 127.0.0.1:1975;
+    check interval=3000 rise=1 fall=1 timeout=1000 type=http;
+    check_http_send "GET / HTTP/1.0\r\nConnection: keep-alive\r\n\r\n";
+    check_http_expect_alive http_2xx http_3xx;
+}
+server {
+    listen 1970;
+    location / {
+        root   html;
+        index  index.html index.htm;
+    }
+}
+--- config
+    location / {
+        proxy_pass http://backend;
+    }
+    location /status {
+        check_status html;
+    }
+--- request
+GET /status?format=prometheus
+--- response_headers
+Content-Type: text/plain
+--- response_body_like: ^.*nginx_http_upstream_check_total 6.*$
