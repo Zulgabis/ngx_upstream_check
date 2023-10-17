@@ -1095,7 +1095,7 @@ ngx_http_upstream_check_begin_handler(ngx_event_t *event)
 
     peer = event->data;
     ucscf = peer->conf;
-    int is_https_check_type = is_https_check(peer);
+    // int is_https_check_type = is_https_check(peer);
 
     ngx_add_timer(event, ucscf->check_interval / 2);
 
@@ -1200,7 +1200,7 @@ ngx_http_upstream_check_connect_handler(ngx_event_t *event)
     c->write->log = c->log;
     c->pool = ngx_create_pool(NGX_CYCLE_POOL_SIZE, ngx_cycle->log);
 #if (NGX_HTTP_SSL)
-    if (is_https_check_type && rc == NGX_AGAIN) {
+    if (is_https_check(peer) && rc == NGX_AGAIN) {
         c->write->handler = ngx_http_upstream_do_ssl_handshake;
         c->read->handler = ngx_http_upstream_do_ssl_handshake;
     }
@@ -1209,7 +1209,7 @@ ngx_http_upstream_check_connect_handler(ngx_event_t *event)
 upstream_check_connect_done:
     peer->state = NGX_HTTP_CHECK_CONNECT_DONE;
 
-    if (!is_https_check_type) {
+    if (!is_https_check(peer)) {
         c->write->handler = peer->send_handler;
         c->read->handler = peer->recv_handler;
     }
