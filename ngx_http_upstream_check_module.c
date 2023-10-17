@@ -91,6 +91,8 @@ typedef struct {
 
     ngx_atomic_t                             down;
 
+    ngx_str_t                               *upstream_name;
+
     u_char                                   padding[64];
 } ngx_http_upstream_check_peer_shm_t;
 
